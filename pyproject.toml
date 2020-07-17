@@ -7,7 +7,8 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
-nixops = {git = "https://github.com/NixOS/nixops.git", branch="master"}
+# nixops = {git = "https://github.com/NixOS/nixops.git", branch="master"}
+nixops = {git = "https://github.com/grahamc/nixops.git", branch="context-manager-states-rebase"}
 nixopsvbox = {git = "https://github.com/nix-community/nixops-vbox.git", branch="master"}
 
 [tool.poetry.dev-dependencies]

@@ -1,5 +1,5 @@
 {
-  network = {}; # .storage.legacy.databasefile = "./deployment.nixops";
+  network.storage.legacy.databasefile = "./deployment.nixops";
 
   example = { pkgs, lib, ... }: {
     deployment.targetEnv = "virtualbox";
@@ -19,5 +19,10 @@
     };
 
     services.mingetty.autologinUser = "root";
+    systemd.services.systemd-udevd.serviceConfig = {
+      SystemCallFilter = "@debug";
+      NetworkNamespacePath = "/var/run/netns/physical";
+      ExecStart = [ "" "${pkgs.strace}/bin/strace -f ${pkgs.systemd}/lib/systemd/systemd-udevd" ];
+    };
   };
 }
