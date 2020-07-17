@@ -1,0 +1,37 @@
+From 2102650affde55fab76f5aa6b94aa053f434e859 Mon Sep 17 00:00:00 2001
+From: Graham Christensen <graham@grahamc.com>
+Date: Fri, 17 Jul 2020 13:44:39 -0400
+Subject: [PATCH] udev: listen across all NSIDs
+
+---
+ src/udev/udevd.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
+
+diff --git a/src/udev/udevd.c b/src/udev/udevd.c
+index ca65474f27..0c5e5a0d47 100644
+--- a/src/udev/udevd.c
++++ b/src/udev/udevd.c
+@@ -1368,6 +1368,7 @@ static int on_post(sd_event_source *s, void *userdata) {
+ static int listen_fds(int *ret_ctrl, int *ret_netlink) {
+         int ctrl_fd = -1, netlink_fd = -1;
+         int fd, n;
++        int enable_netlink_nsid = 1;
+ 
+         assert(ret_ctrl);
+         assert(ret_netlink);
+@@ -1387,7 +1388,11 @@ static int listen_fds(int *ret_ctrl, int *ret_netlink) {
+                 if (sd_is_socket(fd, AF_NETLINK, SOCK_RAW, -1) > 0) {
+                         if (netlink_fd >= 0)
+                                 return -EINVAL;
+-                        netlink_fd = fd;
++
++                        /* cross-namespace shenanigans. this could fail, if it returns < 0 something intelligent should happen */
++                        setsockopt(fd, SOL_NETLINK, NETLINK_LISTEN_ALL_NSID, &enable_netlink_nsid, sizeof enable_netlink_nsid);
++
++                        netlink_d = fd;
+                         continue;
+                 }
+ 
+-- 
+2.25.4
+
