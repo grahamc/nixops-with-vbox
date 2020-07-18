@@ -1,14 +1,46 @@
-From 2102650affde55fab76f5aa6b94aa053f434e859 Mon Sep 17 00:00:00 2001
+From be5d0efb9892aec1c27660ba74db4efcb4232e45 Mon Sep 17 00:00:00 2001
 From: Graham Christensen <graham@grahamc.com>
 Date: Fri, 17 Jul 2020 13:44:39 -0400
 Subject: [PATCH] udev: listen across all NSIDs
 
 ---
- src/udev/udevd.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ src/libsystemd/sd-device/device-monitor.c | 4 ++++
+ src/libsystemd/sd-netlink/sd-netlink.c    | 4 ++++
+ src/udev/udevd.c                          | 5 +++++
+ 3 files changed, 13 insertions(+)
 
+diff --git a/src/libsystemd/sd-device/device-monitor.c b/src/libsystemd/sd-device/device-monitor.c
+index 42753abe08..b68da24213 100644
+--- a/src/libsystemd/sd-device/device-monitor.c
++++ b/src/libsystemd/sd-device/device-monitor.c
+@@ -147,6 +147,10 @@ int device_monitor_new_full(sd_device_monitor **ret, MonitorNetlinkGroup group,
+                 sock = socket(PF_NETLINK, SOCK_RAW|SOCK_CLOEXEC|SOCK_NONBLOCK, NETLINK_KOBJECT_UEVENT);
+                 if (sock < 0)
+                         return log_debug_errno(errno, "sd-device-monitor: Failed to create socket: %m");
++
++                if (setsockopt_int(fd, SOL_NETLINK, NETLINK_LISTEN_ALL_NSID, 1) < 0)
++                        return log_debug_errno(r, "sd-device-monitor: Failed to enable NETLINK_LISTEN_ALL_NSID option, ignoring: %m");
++
+         }
+ 
+         m = new(sd_device_monitor, 1);
+diff --git a/src/libsystemd/sd-netlink/sd-netlink.c b/src/libsystemd/sd-netlink/sd-netlink.c
+index 5b7081089e..939cbc5300 100644
+--- a/src/libsystemd/sd-netlink/sd-netlink.c
++++ b/src/libsystemd/sd-netlink/sd-netlink.c
+@@ -111,6 +111,10 @@ int sd_netlink_open_fd(sd_netlink **ret, int fd) {
+         if (r < 0)
+                 log_debug_errno(r, "sd-netlink: Failed to enable NETLINK_EXT_ACK option, ignoring: %m");
+ 
++        r = setsockopt_int(fd, SOL_NETLINK, NETLINK_LISTEN_ALL_NSID, 1);
++        if (r < 0)
++                log_debug_errno(r, "sd-netlink: Failed to enable NETLINK_LISTEN_ALL_NSID option, ignoring: %m");
++
+         r = socket_bind(rtnl);
+         if (r < 0) {
+                 rtnl->fd = -1; /* on failure, the caller remains owner of the fd, hence don't close it here */
 diff --git a/src/udev/udevd.c b/src/udev/udevd.c
-index ca65474f27..0c5e5a0d47 100644
+index ca65474f27..6f2ed603a1 100644
 --- a/src/udev/udevd.c
 +++ b/src/udev/udevd.c
 @@ -1368,6 +1368,7 @@ static int on_post(sd_event_source *s, void *userdata) {
@@ -19,19 +51,17 @@ index ca65474f27..0c5e5a0d47 100644
  
          assert(ret_ctrl);
          assert(ret_netlink);
-@@ -1387,7 +1388,11 @@ static int listen_fds(int *ret_ctrl, int *ret_netlink) {
+@@ -1387,6 +1388,10 @@ static int listen_fds(int *ret_ctrl, int *ret_netlink) {
                  if (sd_is_socket(fd, AF_NETLINK, SOCK_RAW, -1) > 0) {
                          if (netlink_fd >= 0)
                                  return -EINVAL;
--                        netlink_fd = fd;
 +
 +                        /* cross-namespace shenanigans. this could fail, if it returns < 0 something intelligent should happen */
 +                        setsockopt(fd, SOL_NETLINK, NETLINK_LISTEN_ALL_NSID, &enable_netlink_nsid, sizeof enable_netlink_nsid);
 +
-+                        netlink_d = fd;
+                         netlink_fd = fd;
                          continue;
                  }
- 
 -- 
 2.25.4
 

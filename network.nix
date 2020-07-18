@@ -20,19 +20,21 @@
             ${pkgs.iproute}/bin/ip netns add virtual
             ${pkgs.coreutils}/bin/touch /var/run/netns/physical
             ${pkgs.utillinux}/bin/mount -o bind /proc/self/ns/net /var/run/netns/physical
-            exec ${pkgs.iproute}/bin/ip netns exec ${if true then "physical" else "virtual"} systemd
+            exec ${pkgs.iproute}/bin/ip netns exec ${if false then "physical" else "virtual"} systemd
           ''
         );
       };
 
       services.mingetty.autologinUser = "root";
+
+      systemd.package = patched-udev;
       systemd.services.systemd-udevd.serviceConfig = {
         SystemCallFilter = "@debug";
         NetworkNamespacePath = "/var/run/netns/physical";
-        ExecStart = [
-          ""
-          "${patched-udev}/lib/systemd/systemd-udevd"
-        ];
+        #ExecStart = [
+        #  ""
+        #  "${patched-udev}/lib/systemd/systemd-udevd"
+        #];
       };
     };
 }
