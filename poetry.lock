@@ -29,7 +29,7 @@ typeguard = "^2.7.1"
 typing-extensions = "^3.7.4"
 
 [package.source]
-reference = "0330ead36be75c0b0f80cf84c227f13380daf414"
+reference = "c082c5b441dd07536a6448db653e8842835eb446"
 type = "git"
 url = "https://github.com/NixOS/nixops.git"
 [[package]]
@@ -105,7 +105,8 @@ docs = ["sphinx", "jaraco.packaging (>=3.2)", "rst.linker (>=1.9)"]
 testing = ["jaraco.itertools", "func-timeout"]
 
 [metadata]
-content-hash = "083c29cb961d63c57d78d573877b5b9b7fb87b5d2f2cf0eed05ad10bac9f6642"
+content-hash = "663a43df2b04e66e1e0114598d65ba710c85ad9ab95623d5f67b2c51dcbcaa3a"
+lock-version = "1.0"
 python-versions = "^3.7"
 
 [metadata.files]
